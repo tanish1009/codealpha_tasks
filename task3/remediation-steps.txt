@@ -1,0 +1,59 @@
+Step 1: Replace Dangerous Subshell Execution Functions
+
+Action: Decommission os.system() entirely.
+Why: The os.system() function automatically opens an operating system shell environment (e.g., /
+bin/sh) to run string inputs. This environment parses metacharacters like semicolons, pipes, and
+ampersands, which gives attackers command chaining privileges.
+Fix: Migrate to the robust subprocess.run() API with the parameter shell=False explicitly
+enforced (or left to its default safe state).
+
+Step 2: Isolate Input Variables using Structured Lists
+
+Action: Convert command string concatenations into array/list payloads.
+Why: When utilizing an f-string or string concatenation (like f"ping {ip}"), the execution boundary
+between instructions and user-supplied data becomes blurred.
+Fix: Pass arguments as an isolated list of strings. The operating system kernel maps these elements
+directly into the executable's vector space, disabling any shell character interpretation entirely.
+# VULNERABLE APPROACH:
+command = f"ping -c 1 {ip}"
+# REMEDIATED APPROACH:
+command_args = ["ping", "-c", "1", ip_address]
+
+
+Step 3: Implement Contextual Input Allow-Lists
+
+Action: Validate incoming arguments using strict Regular Expressions.
+Why: Relying on parameter placement alone leaves the application exposed to unexpected side effects
+or logic manipulation (e.g., passing secondary arguments like --help or unexpected flags directly into
+the binary).
+Fix: Apply a defensive validation match layer using Python's re module to ensure the parameter
+contains only standard, safe alphanumeric characters and literal dots.
+
+Step 4: Establish Runtime Timeout Guardrails
+
+Action: Inject explicit timeout envelopes into execution triggers.
+Why: Attackers can purposefully inject addresses that hang or run continuously, consuming a
+processing thread indefinitely. This quickly leads to systemic Denial of Service (DoS).
+Fix: Provide a strict timeout configuration attribute to abort any commands that block execution past a
+reasonable operational window.
+import re
+# Ensure input only consists of alphanumeric characters and standard periods
+if not re.match(r"^[0-9a-zA-Z\.]+$", target_ip):
+raise ValueError("Invalid characters detected")
+
+# Enforce a 5-second structural execution threshold
+result = subprocess.run(command_args, shell=False, timeout=5)
+
+
+Step 5: Mask Raw System Logs and Error Feedback
+
+Action: Capture stdout/stderr streams in memory and return generic API errors.
+Why: Returning raw system error states directly to an external user interface exposes structural layout
+intelligence (banner grabbing, environment paths, OS flavors) which assists threat actors during mapping
+phases.
+Fix: Restrict outputs to sanitized, high-level JSON payloads and write verbose system errors directly to
+secure, internal system loggers instead.
+except subprocess.TimeoutExpired:
+return {"error": "The requested utility operation timed out"}
+except Exception:
+return {"error": "An internal execution error occurred"}
