@@ -184,10 +184,3 @@ Modern advanced persistent threats leverage artificial intelligence frameworks:
 * **✔️ CORRECT ACTION:** Bypass the email entirely. Navigate manually to your enterprise identity dashboard via a standard browser bookmark.
 
 
-
----
-
-📣 **🚨 Human vigilance is your primary firewall!**
-
-
-Report anomalies to: `security@company.com` | Hotline: **+1-XXX-SECURITY**
